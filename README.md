@@ -1,5 +1,4 @@
 # Geolier_bot
-Python discord bot
 
 Hey,
 
