@@ -79,8 +79,9 @@ async def lst_voice_channels(ctx):
     #Renvoie la liste des channel vocaux du serveur
     return ([(r.name) for r in ctx.guild.voice_channels])
 
+
 @client.command()
-async def update_role(ctx,name):
+async def update_role(ctx, name):
     role = discord.utils.get(ctx.guild.roles, name=name)
     await role.edit(speak=False)
     role.hoist = True
@@ -88,99 +89,50 @@ async def update_role(ctx,name):
 
 
 @client.command()
-async def prison(ctx, member: discord.Member, temps=5.0 ):
-    """
+async def prison(ctx, member: discord.Member, temps=5.0):
 
-    Attribution du role géolier + mise en place du top Role
+    await update_role(ctx, '@everyone') 
 
-    Update du role des que qql join le serv
+    list_role = await roles(ctx) #Liste des roles du serveur
 
-    """
-    await update_role(ctx,'@everyone')
-
-
-    """
-
-
-    Liste les roles présents dans le serveur
-    
-    """
-    list_role = await roles(ctx)
-
-
-    """
-
-
-    Vérifie si le role 'Prisonnier' est présent dans la liste
-
-    """
     if 'Prisonnier' not in list_role:
-        #Créer un role 'Prisonnier'
-        await create_role(ctx)
-    await update_role(ctx,'Prisonnier')
-    """
+        await create_role(ctx)#Créer un role 'Prisonnier'
+    await update_role(ctx, 'Prisonnier')
 
+    nom_role_membre = await noms_roles_membre(member) #Sauvegarde des roles du membre
 
-    Mémorisation des roles du membre avant de les enlever
-
-    """
-    save_role_membre = await roles_membre(member)
-    """
-
-    Wipe tous les roles du membres :
-
-    """
-    nom_role_membre = await noms_roles_membre(member)
+    #Bloc de suppression de tous les roles du membre
     for i in nom_role_membre:
         role = discord.utils.get(member.guild.roles, name=f"{i}")
         if str(role) != "@everyone":
             await member.remove_roles(role)
-    """
 
-    #Recherche le role 'Prisonnier'
-
-    """
     role = discord.utils.get(member.guild.roles, name="Prisonnier")
-    await member.add_roles(role)
-    """
+    await member.add_roles(role) #Ajout du role Prisonnier au membre
 
-    #Création de la catégorie Prison:
-
-    """
-    lst_cate = await lst_categories(ctx)
+    lst_cate = await lst_categories(ctx) #Liste des catégories
     if 'Prison' not in lst_cate:
         await ctx.guild.create_category('Prison')
-    """
 
-    Création du channel Cellule dans la catégorie Prison
+    lst_voice_channel = await lst_voice_channels(ctx) # Liste des salons vocaux
 
-    """
-    lst_voice_channel = await lst_voice_channels(ctx)
-    if 'Cellule' not in lst_voice_channel:
-        category = discord.utils.get(ctx.guild.categories, name='Prison')
+    if 'Cellule' not in lst_voice_channel: 
+        category = discord.utils.get(ctx.guild.categories, name='Prison') 
         await ctx.guild.create_voice_channel('Cellule', category=category)
 
+    await member.edit(mute=True)  #Permet de mute l'utilisateur
+    await member.move_to(discord.utils.get(ctx.guild.voice_channels,name='Cellule'))  #Déplace l'utilisateur vers la cellue
 
-    await member.edit(mute=True)
-    await member.move_to(discord.utils.get(ctx.guild.voice_channels, name = 'Cellule'))
+    await asyncio.sleep(temps * 60) #Timer
 
-    await asyncio.sleep(temps*60)
+    await member.edit(mute=False)  #Permet d'unmute l'utilisateur
 
-    await member.edit(mute=False)
 
-    for i in nom_role_membre:
+    #Bloc de rRéattribution des roles
+    for i in nom_role_membre: 
         role = discord.utils.get(member.guild.roles, name=f"{i}")
         if str(role) != "@everyone":
             await member.add_roles(role)
-
-
-    """
-    Détection de la présence du membre en vocal
-    Si oui : move_to cellule + mute 
-    Sinon mute
-
-
-    """
 
 
 #Execute en boucle la fonction change_status()
