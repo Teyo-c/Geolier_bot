@@ -89,7 +89,11 @@ async def update_role(ctx, name):  # Mets à jour le role passé en paramètre
 @client.command()
 async def prison(ctx, member: discord.Member, temps=60):
 
-    channel_origin = member.voice.channel.name  # Salon vocal du membre
+    try :
+        channel_origin = member.voice.channel.name  # Salon vocal du membre
+    except:
+        channel_origin= None
+    
     max_temps = 600  # Temps de prison max
     list_role = await roles(ctx)  # Liste des roles du serveur
     # Sauvegarde des roles du membre
@@ -135,24 +139,28 @@ async def prison(ctx, member: discord.Member, temps=60):
         category = discord.utils.get(ctx.guild.categories, name='Prison')
         await ctx.guild.create_voice_channel('Cellule', category=category)
 
-    await member.edit(mute=True)  # Mute l'utilisateur
+    
 
     # Déplace l'utilisateur vers la cellue
-    await member.move_to(discord.utils.get(ctx.guild.voice_channels, name='Cellule'))
-
+    if not channel_origin == None :
+        await member.edit(mute=True)  # Mute l'utilisateur
+        await member.move_to(discord.utils.get(ctx.guild.voice_channels, name='Cellule'))
+    
     await asyncio.sleep(temps)  # Temps d'emprisonnement
 
 
     """
     Libération 
     """
-    await member.edit(mute=False)  # Unmute l'utilisateur
+    
     await member.remove_roles(discord.utils.get(member.guild.roles, name="Prisonnier")) #Supprime le role Prisonnier
     # Ecrit un message de confirmation de libération
     await ctx.send(f"{member.name} a été libéré !")
 
     # Renvoie le membre à son salon vocal d'origine
-    await member.move_to(discord.utils.get(ctx.guild.voice_channels, name=channel_origin))
+    if not channel_origin == None :
+        await member.edit(mute=False)  # Unmute l'utilisateur
+        await member.move_to(discord.utils.get(ctx.guild.voice_channels, name=channel_origin))
 
     for i in nom_role_membre:  # Bloc de réattribution des roles
         role = discord.utils.get(member.guild.roles, name=f"{i}")
