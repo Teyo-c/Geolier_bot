@@ -2,7 +2,6 @@ import discord
 import os
 import random
 import asyncio
-import nacl
 from discord.ext import commands
 from keep_alive import keep_alive
 
@@ -141,8 +140,8 @@ async def prison(ctx, member: discord.Member, temps=60):
     """
     Connection vocale du Bot avec soundboard prote prison
     """
-    if not channel_origin == None :
-        await music(ctx,member)
+    #if not channel_origin == None :
+        #await music(ctx,member)
     
 
     # Déplace l'utilisateur vers la cellue
