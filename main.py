@@ -37,11 +37,8 @@ async def change_status():
 
 
 @commands.has_permissions(manage_roles=True)
-async def create_role(ctx):
-
+async def create_role(ctx,name):
     guild = ctx.guild
-    # Définition du nom du role
-    name = 'Prisonnier'
     # Création du role
     role = await guild.create_role(name=name)
     role.hoist = True
@@ -89,12 +86,39 @@ async def suppr_roles(member, lst_roles):
             await member.remove_roles(role)
 
 
-@client.command()
-async def prison(ctx, member: discord.Member, temps=60):
+# Met en place la raison de l'emprisonnement
+async def raison(reason):
+    if len(reason)==0:
+        reason = 'Pas de raison spécifiée'
+    else:
+        raison = ''
+        for i in reason:
+            raison+=i
+            raison += ' '
+        reason = raison
+    return reason
 
+
+# Met à jour tous les salons textuels
+async def update_text(ctx,lst_salons):
+    for i in lst_salons:
+        channel = discord.utils.get(ctx.guild.text_channels, name=i)
+        role = discord.utils.get(ctx.guild.roles, name="Prisonnier")
+        await channel.set_permissions(role,send_messages=False)
+    
+# Met à jour tous les salons vocaux
+async def update_voice(ctx,lst_salons):
+    for i in lst_salons:
+        channel = discord.utils.get(ctx.guild.voice_channels, name=i)
+        role = discord.utils.get(ctx.guild.roles, name="Prisonnier")
+        await channel.set_permissions(role,connect=False)
+
+@client.command()
+async def prison(ctx, member: discord.Member, temps=60, *reason):
     """
     Attribution des valeurs des variables
     """
+    reason = await raison(reason)
     max_temps = 600  # Temps de prison max
     list_role = await roles(ctx)  # Liste des roles du serveur
     # Sauvegarde des roles du membre
@@ -108,9 +132,10 @@ async def prison(ctx, member: discord.Member, temps=60):
     Pré-réquis
     """
     await update_role(ctx, '@everyone')
-
+    await update_text(ctx,await lst_text_channels(ctx))
+    await update_voice(ctx,await lst_voice_channels(ctx))
     if 'Prisonnier' not in list_role:
-        await create_role(ctx)  # Créer un role 'Prisonnier'
+        await create_role(ctx,'Prisonnier')  # Créer un role 'Prisonnier'
     await update_role(ctx, 'Prisonnier')
 
     # Création de la catégorie Prison
@@ -127,9 +152,10 @@ async def prison(ctx, member: discord.Member, temps=60):
     if 'Cellule' not in await lst_voice_channels(ctx):
         await ctx.guild.create_voice_channel('Cellule', category=category)
 
+
+    role = discord.utils.get(member.guild.roles, name="Prisonnier")
     archiveprison = discord.utils.get(
         ctx.guild.text_channels, name='archiveprison')
-
     """
     Conditions à vérifier
     """
@@ -147,13 +173,13 @@ async def prison(ctx, member: discord.Member, temps=60):
     """
     await suppr_roles(member, nom_role_membre)
 
-    role = discord.utils.get(member.guild.roles, name="Prisonnier")
     await member.add_roles(role)  # Ajout du role Prisonnier au membre
 
     # Déplace l'utilisateur vers la cellue
     if not channel_origin == None:
         await member.edit(mute=True)  # Mute l'utilisateur
         await member.move_to(discord.utils.get(ctx.guild.voice_channels, name='Cellule'))
+    await archiveprison.send(f' `{member.name}` viens d\'être emprisonné `{temps} secondes` pour `{reason}` ')
 
     await asyncio.sleep(temps)  # Temps d'emprisonnement
 
@@ -165,7 +191,7 @@ async def prison(ctx, member: discord.Member, temps=60):
     await member.remove_roles(discord.utils.get(member.guild.roles, name="Prisonnier"))
     
     # Ecrit un message de confirmation de libération
-    await archiveprison.send(f"{member.name} a été libéré !")
+    await archiveprison.send(f"`{member.name}` a été libéré !")
 
     # Renvoie le membre à son salon vocal d'origine
     if not channel_origin == None:
