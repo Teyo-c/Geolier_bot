@@ -5,6 +5,8 @@ import asyncio
 from discord.ext import commands
 from keep_alive import keep_alive
 
+temps_max = {}
+
 client = commands.Bot(command_prefix='!')
 
 
@@ -84,6 +86,7 @@ async def suppr_roles(member, lst_roles):
         role = discord.utils.get(member.guild.roles, name=f"{i}")
         if str(role) != "@everyone":
             await member.remove_roles(role)
+    return None
 
 
 # Met en place la raison de l'emprisonnement
@@ -105,13 +108,27 @@ async def update_text(ctx,lst_salons):
         channel = discord.utils.get(ctx.guild.text_channels, name=i)
         role = discord.utils.get(ctx.guild.roles, name="Prisonnier")
         await channel.set_permissions(role,send_messages=False)
-    
+    return None
+
 # Met à jour tous les salons vocaux
 async def update_voice(ctx,lst_salons):
     for i in lst_salons:
         channel = discord.utils.get(ctx.guild.voice_channels, name=i)
         role = discord.utils.get(ctx.guild.roles, name="Prisonnier")
         await channel.set_permissions(role,connect=False)
+    return None
+
+@client.command()
+async def set_temps_max(ctx, temps):
+    temps_max[ctx.guild.id] = int(temps)
+    return None
+
+async def get_max_temps(ctx):
+    if ctx.guild.id in temps_max:
+        max_temps = temps_max[ctx.guild.id]
+    else:
+        max_temps = 600  # Temps de prison max
+    return max_temps
 
 @client.command()
 async def prison(ctx, member: discord.Member, temps=60, *reason):
@@ -119,7 +136,7 @@ async def prison(ctx, member: discord.Member, temps=60, *reason):
     Attribution des valeurs des variables
     """
     reason = await raison(reason)
-    max_temps = 600  # Temps de prison max
+    max_temps = await get_max_temps(ctx)
     list_role = await roles(ctx)  # Liste des roles du serveur
     # Sauvegarde des roles du membre
     nom_role_membre = await noms_roles_membre(member)
@@ -202,6 +219,7 @@ async def prison(ctx, member: discord.Member, temps=60, *reason):
         role = discord.utils.get(member.guild.roles, name=f"{i}")
         if str(role) != "@everyone":
             await member.add_roles(role)
+    return None
 
 
 # Execute en boucle la fonction change_status()
