@@ -194,8 +194,10 @@ async def prison(ctx, member: discord.Member, temps=60, *reason):
 
     # Déplace l'utilisateur vers la cellue
     if not channel_origin == None:
-        await member.edit(mute=True)  # Mute l'utilisateur
-        await member.move_to(discord.utils.get(ctx.guild.voice_channels, name='Cellule'))
+        try :
+            await member.edit(mute=True)  # Mute l'utilisateur
+            await member.move_to(discord.utils.get(ctx.guild.voice_channels, name='Cellule'))
+        except : None
     await archiveprison.send(f' `{member.name}` viens d\'être emprisonné `{temps} secondes` pour `{reason}` ')
 
     await asyncio.sleep(temps)  # Temps d'emprisonnement
@@ -212,9 +214,10 @@ async def prison(ctx, member: discord.Member, temps=60, *reason):
 
     # Renvoie le membre à son salon vocal d'origine
     if not channel_origin == None:
-        await member.edit(mute=False)  # Unmute l'utilisateur
-        await member.move_to(discord.utils.get(ctx.guild.voice_channels, name=channel_origin))
-
+        try :
+            await member.edit(mute=False)  # Unmute l'utilisateur
+            await member.move_to(discord.utils.get(ctx.guild.voice_channels, name=channel_origin))
+        except: None
     for i in nom_role_membre:  # Bloc de réattribution des roles
         role = discord.utils.get(member.guild.roles, name=f"{i}")
         if str(role) != "@everyone":
